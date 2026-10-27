@@ -1,0 +1,82 @@
+{
+  "title": "Meshtastic HA Bot",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose the gateway",
+        "description": "The bot listens on one private channel of this Meshtastic gateway and answers on the same channel. Add the integration again for another channel.",
+        "data": {
+          "gateway_entry_id": "Meshtastic gateway"
+        }
+      },
+      "channel": {
+        "title": "Channel and senders",
+        "description": "Everyone who has the key of the channel can give the bot commands, so use a channel of its own. The primary channel and channels with the default key cannot be used. Not offered: {unavailable}.",
+        "data": {
+          "channel_index": "Channel",
+          "allowed_senders": "Allowed senders"
+        },
+        "data_description": {
+          "channel_index": "A private channel of the gateway. When the gateway cannot tell about its channels, enter the channel number (1 to 7) and make sure it is private.",
+          "allowed_senders": "Nodes that may use the bot. Leave empty to let everyone on the channel ask questions. Required as soon as the bot may control something. A node that is not listed can be typed as !a1b2c3d4."
+        }
+      },
+      "uplink": {
+        "title": "MQTT uplink is on",
+        "description": "The gateway passes the messages of this channel on to an MQTT server. The answers of the bot, for example the temperature of a room, can then leave your house over the internet. Continue only if that is fine."
+      }
+    },
+    "error": {
+      "invalid_sender": "Enter a node like !a1b2c3d4 or a node number."
+    },
+    "abort": {
+      "already_configured": "The bot is already set up on this channel.",
+      "no_gateway": "Set up the Meshtastic integration with a gateway first.",
+      "no_private_channel": "The gateway has no private channel. Add a secondary channel with a key of its own to the gateway first. Not usable: {unavailable}."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "What the bot may do",
+        "description": "Everything is refused until it is on a list. A command involving anything outside the lists is answered with 'not allowed'. Both lists only reach what is also exposed to Assist.",
+        "data": {
+          "trigger": "Trigger word",
+          "allowed_senders": "Allowed senders",
+          "read_entities": "May read: entities",
+          "read_areas": "May read: areas",
+          "read_domains": "May read: domains",
+          "control_entities": "May control: entities",
+          "control_areas": "May control: areas",
+          "control_domains": "May control: domains",
+          "scripts": "Scripts",
+          "allow_sensitive_domains": "Allow sensitive domains",
+          "cooldown": "Cooldown per sender",
+          "max_answers_per_hour": "Answers per hour",
+          "answer_length": "Answer length"
+        },
+        "data_description": {
+          "trigger": "What a message must start with, for example @habot. The answers start with the same name.",
+          "allowed_senders": "Nodes that may use the bot. Leave empty to let everyone on the channel ask questions. Required as soon as the bot may control something or run scripts.",
+          "read_entities": "Questions about these entities are answered. Asking for several things at once needs all of them on the list.",
+          "read_areas": "Questions about anything in these areas are answered.",
+          "read_domains": "Questions about anything of these kinds, for example weather, are answered.",
+          "control_entities": "Commands may change these entities.",
+          "control_areas": "Commands may change anything in these areas, except sensitive devices.",
+          "control_domains": "Commands may change anything of these kinds.",
+          "scripts": "Scripts that a 'run' command may start, for example '@habot run night mode'. They are found by name.",
+          "allow_sensitive_domains": "Lets locks, alarm panels, covers, sirens, valves and climate devices be added to the control list. The built-in agent understands 'turn off' on a lock as unlock and 'turn on' on a cover as open.",
+          "cooldown": "Seconds a sender has to wait between two commands. Commands sent sooner get no answer.",
+          "max_answers_per_hour": "For the whole bot. More commands get no answer until the hour has passed.",
+          "answer_length": "Bytes of one answer, the name of the bot included. Never more than Mesh Chat allows (200)."
+        }
+      }
+    },
+    "error": {
+      "invalid_sender": "Enter a node like !a1b2c3d4 or a node number.",
+      "invalid_trigger": "The trigger word must be 2 to 20 characters without spaces, letters and signs only.",
+      "senders_required": "Choose who may use the bot first: controlling things and running scripts needs a list of allowed senders.",
+      "sensitive_not_allowed": "Locks, alarm panels, covers, sirens, valves and climate devices need 'Allow sensitive domains' to be switched on."
+    }
+  }
+}

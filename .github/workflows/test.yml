@@ -1,0 +1,36 @@
+name: "Tests"
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  pytest:
+    name: "pytest"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout the repository"
+        uses: "actions/checkout@v6.0.2"
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: "Install the Home Assistant test harness"
+        run: python3 -m pip install pytest-homeassistant-custom-component
+
+      # the harness does not install the packages the conversation integration needs to understand sentences
+      - name: "Install the requirements of the conversation integration"
+        run: >
+          python3 -m pip install $(python3 -c "import json, pathlib, homeassistant;
+          manifest = pathlib.Path(homeassistant.__file__).parent / 'components/conversation/manifest.json';
+          print(*json.loads(manifest.read_text())['requirements'])")
+
+      - name: "Run tests"
+        run: python3 -m pytest tests -q
