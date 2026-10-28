@@ -1,8 +1,19 @@
+<p align="center"><img src="custom_components/meshtastic_habot/brand/logo.png" alt="Meshtastic HA Bot" width="420"></p>
+
 # Meshtastic HA Bot (`@habot`)
 
 A Home Assistant integration that lets the people on a **private Meshtastic channel** talk to **Home Assistant's
-Assist**. Someone sends `@habot is the front door locked?` on the channel, the bot asks Home Assistant's built-in
-conversation agent, and the answer goes back to the same channel over the mesh.
+Assist**. Someone sends `@habot is the kitchen light on` on the channel, the bot asks Home Assistant's built-in
+conversation agent, and the answer goes back to the same channel over the mesh, with no internet needed.
+
+```
+Anna   @habot what time is it
+habot  habot: 7:09 AM
+Ben    @habot turn off the Kitchen Lights
+habot  habot: Turned off the light
+Anna   @habot turn on the Living Room RGBWW Lights
+habot  habot: not allowed          (that light is not on the control list)
+```
 
 It works through the [Meshtastic integration](https://github.com/meshtastic/home-assistant) (messages in and out) and
 Home Assistant's [conversation](https://www.home-assistant.io/integrations/conversation/) integration (the brain).
@@ -17,20 +28,24 @@ Home Assistant's [conversation](https://www.home-assistant.io/integrations/conve
 
 1. [What it does](#what-it-does)
 2. [Requirements](#requirements)
-3. [What the bot may read and do](#what-the-bot-may-read-and-do)
-4. [Security](#security)
-5. [Replies](#replies)
-6. [Setup](#setup)
-7. [Options](#options)
-8. [Audit](#audit)
-9. [Limits and risks](#limits-and-risks)
+3. [Installation](#installation)
+4. [Setup](#setup)
+5. [What the bot may read and do](#what-the-bot-may-read-and-do)
+6. [Security](#security)
+7. [Replies](#replies)
+8. [Options](#options)
+9. [Audit](#audit)
+10. [Telegram and other bridges](#telegram-and-other-bridges)
+11. [Troubleshooting](#troubleshooting)
+12. [Limits and risks](#limits-and-risks)
 
 ## What it does
 
 - Listens on **one private channel** per bot (add the integration again for another channel). Direct messages are
   never read.
 - Reacts only to messages that **start with the trigger word** (default `@habot`, case-insensitive, followed by a
-  space). Everything else on the channel is ignored.
+  space) and come from a node on the **allowed senders** list (required as soon as the bot may control anything, see
+  [Security](#security)). Everything else on the channel is ignored.
 - Hands the rest of the message to Home Assistant's built-in conversation agent and sends the answer back as a channel
   message, shown in Mesh Chat as sent by the bot.
 - Can run **scripts you chose**, as commands: `@habot run night mode`.
@@ -50,11 +65,51 @@ neither is a follow-up such as *and upstairs?*.
 - **No API key, no account and no cloud service.** The bot only uses the local, built-in agent. Other conversation
   agents (LLMs) are not supported: the lists below can only be enforced for the built-in agent.
 
+## Installation
+
+Through [HACS](https://hacs.xyz) as a custom repository:
+
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rdkmedia0&repository=meshtastic-habot&category=integration)
+
+1. In HACS choose *Custom repositories*, add `https://github.com/rdkmedia0/meshtastic-habot` as type *Integration* (or
+   use the button above).
+2. Download **Meshtastic HA Bot** and restart Home Assistant.
+
+Or copy the `custom_components/meshtastic_habot` folder into the `custom_components` folder of your Home Assistant
+configuration and restart.
+
+## Setup
+
+1. *Settings → Devices & services → Add integration → Meshtastic HA Bot*.
+2. Choose the **gateway** (your Meshtastic integration entry).
+
+   <p align="center"><img src="docs/images/setup-gateway.png" alt="Choose the gateway" width="420"></p>
+
+3. Choose the **channel** and the **allowed senders**. Only private channels are offered; the primary channel and channels
+   with a default key are listed as not available. When the Meshtastic integration cannot tell about the channels of the
+   gateway, enter the channel number instead and make sure the channel is private (the bot checks it as soon as the
+   gateway reports its channels). If the channel has MQTT uplink on you are asked to confirm.
+
+   The allowed senders are chosen from the nodes your gateway knows (a node that is not listed can be typed, as
+   `!a1b2c3d4`). Nodes are recognised by their **node id**, not by their name, see [Troubleshooting](#troubleshooting).
+
+   <p align="center"><img src="docs/images/setup-channel.png" alt="Choose the channel and the allowed senders" width="420"></p>
+
+4. Open *Configure* on the bot (the cogwheel) to add what it may read, what it may control and which scripts it may run
+   (all of it is empty to begin with).
+
+   <p align="center"><img src="docs/images/integration.png" alt="The integration page with the Configure cogwheel" width="620"></p>
+
+5. Test it read-only first, from a node on the allowed list that is **not the gateway itself**:
+   `@habot what time is it`. That question needs no list entry, so it works before you configure anything else.
+
 ## What the bot may read and do
 
 Home Assistant's own *Expose* list (Settings → Voice assistants) is global for everyone who uses Assist and cannot be set
 per channel, so the bot has **its own two lists on top of it**. Both are **empty by default**; nothing is allowed until you
 add it. The bot can only ever touch what is **on its list and exposed to Assist**.
+
+<p align="center"><img src="docs/images/options.png" alt="The options of the bot: allowed senders, what it may read and control, scripts, limits" width="420"></p>
 
 | List | What goes in it | Examples |
 |---|---|---|
@@ -102,8 +157,7 @@ that the sentence is about, the command is refused (it fails closed).
 can send a packet that claims to come from an allowed node. The sender list keeps out accidents and people who are on
 the channel but not on your list; it does not stop someone who deliberately fakes a node. Someone who holds the channel
 key is trusted with whatever the lists allow, which is why the channel is private, the lists are small and the key is
-rotated when somebody should no longer be on the channel. A stronger sender check (an authenticator code, or the Telegram
-user id of a chat bridged through Telegram) can be added later.
+rotated when somebody should no longer be on the channel. There is no stronger check in this version.
 
 ## Replies
 
@@ -118,7 +172,7 @@ Mesh delivery is best effort, so **a missing reply never means that something fa
 | Sender not on the list, rate limit hit, locked out, command too long | None. The audit has it, the channel does not get noise |
 
 - **No reply: check before you repeat.** Ask `@habot is the living room light on`, or look at Mesh Chat and the logbook in
-  Home Assistant, which show what really happened.
+  Home Assistant, which show what really happened. See also [Troubleshooting](#troubleshooting).
 - Commands set a state (*on*, *off*, *set to 20 degrees*), so repeating one is harmless. Scripts you allow should behave
   the same way.
 
@@ -126,19 +180,6 @@ Mesh delivery is best effort, so **a missing reply never means that something fa
 with everyone on the mesh, so every answer is one short message: markdown, emoji and line breaks are removed, the length
 is counted in **bytes**, the name of the bot is part of the budget, and an answer that is still too long is cut at the end
 of a word and finished with `…`. It is never split over several messages.
-
-## Setup
-
-1. Install through HACS (custom repository) and restart Home Assistant.
-2. *Settings → Devices & services → Add integration → Meshtastic HA Bot*.
-3. Choose the gateway and the **channel**. Only private channels are offered; the primary channel and channels with a default
-   key are listed as not available. When the Meshtastic integration cannot tell about the channels of the gateway, enter
-   the channel number instead and make sure the channel is private (the bot checks it as soon as the gateway reports its
-   channels). If the channel has MQTT uplink on you are asked to confirm.
-4. Choose the **allowed senders** from the nodes your gateway knows (a node that is not listed can be typed, as
-   `!a1b2c3d4`).
-5. Open *Configure* on the bot to add what it may read, what it may control and which scripts it may run (all of it is
-   empty to begin with). Test it read-only first: `@habot what time is it`.
 
 ## Options
 
@@ -158,7 +199,10 @@ Saving the options restarts the bot, which also forgets the cooldowns and lock-o
 
 ## Audit
 
-Every command is fired as the event `meshtastic_habot_command`, which the **logbook** shows, with
+Every command is fired as the event `meshtastic_habot_command`, which the **logbook** (*Activity*) shows, with the sender
+as the name of its device in Home Assistant:
+
+<p align="center"><img src="docs/images/logbook.png" alt="The Home Assistant logbook with the commands of the bot" width="620"></p>
 
 | Field | |
 |---|---|
@@ -170,6 +214,35 @@ Every command is fired as the event `meshtastic_habot_command`, which the **logb
 
 Automations can use the event, for example to notify you when a command is denied or not allowed.
 
+## Telegram and other bridges
+
+Only **Meshtastic nodes on the allowed list** can give commands. A message that a bridge such as the
+[Meshtastic Telegram bridge](https://github.com/rdkmedia0/meshtastic-telegram-bridge) copies into the channel is sent
+by the **gateway node**, and the bot never treats messages from the gateway as commands. So someone who writes
+`@habot ...` in Telegram gets no answer, and cannot make the bot do anything.
+
+If a bridge also copies the **channel to Telegram**, the answers of the bot appear there too, for everyone in that chat.
+Keep the bot's channel out of such a bridge, or keep sensitive entities off the read list.
+
+## Troubleshooting
+
+The bot stays **silent** for senders that are not allowed, so most problems look like "no reply". Open the **logbook**
+and look for *Meshtastic HA Bot*:
+
+| What you see | Meaning |
+|---|---|
+| No entry at all | The bot did not see the message. Check that it was sent on the configured channel, starts with the trigger word and a space, is not a direct message, and was not sent **by the gateway node itself** (for example from Mesh Chat in Home Assistant, which sends as the gateway). Check that the bot shows no error under *Settings → Devices & services*. |
+| `denied` | The sender is not on the allowed list (or the command is longer than 120 characters). |
+| `rate_limited`, `locked_out` | The cooldown, the hourly cap or the lock-out dropped the command. |
+| `not_understood` | Home Assistant did not understand the sentence. Use the exact name of the device, in the language Home Assistant is set to, and make sure the entity is exposed to Assist. |
+| `not_allowed` | The sentence involves something that is not on the lists. |
+| `answered`, but nothing arrived | The reply was sent but not delivered, or sending failed (see the Home Assistant log for `Failed to send an answer`). |
+
+**A node that stops working after an update.** The bot recognises a sender by its node id (`!a1b2c3d4`), never by its
+name. A device can get a new id, for example after a reset, a reflash or new hardware, and the gateway then lists two
+nodes with the same name: the old one, which stays in the list for a while, and the new one. Open *Configure* on the bot,
+add the id of the node that is sending now (it is shown on the node in Mesh Chat) and remove the old one.
+
 ## Limits and risks
 
 - Everyone who holds the channel key can use what the lists allow, and the sender list can be faked by them.
@@ -179,3 +252,7 @@ Automations can use the event, for example to notify you when a command is denie
   similar. The lists limit the damage; they do not make the matching perfect.
 - A question is answered by Home Assistant before the bot checks what it was about, so a refused question still
   runs (it changes nothing); only the answer is held back.
+
+## License
+
+[MIT](LICENSE)
