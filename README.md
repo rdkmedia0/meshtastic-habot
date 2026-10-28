@@ -35,9 +35,8 @@ Home Assistant's [conversation](https://www.home-assistant.io/integrations/conve
 7. [Replies](#replies)
 8. [Options](#options)
 9. [Audit](#audit)
-10. [Telegram and other bridges](#telegram-and-other-bridges)
-11. [Troubleshooting](#troubleshooting)
-12. [Limits and risks](#limits-and-risks)
+10. [Troubleshooting](#troubleshooting)
+11. [Limits and risks](#limits-and-risks)
 
 ## What it does
 
@@ -213,16 +212,6 @@ as the name of its device in Home Assistant:
 | `channel`, `config_entry_id` | where it happened |
 
 Automations can use the event, for example to notify you when a command is denied or not allowed.
-
-## Telegram and other bridges
-
-Only **Meshtastic nodes on the allowed list** can give commands. A message that a bridge such as the
-[Meshtastic Telegram bridge](https://github.com/rdkmedia0/meshtastic-telegram-bridge) copies into the channel is sent
-by the **gateway node**, and the bot never treats messages from the gateway as commands. So someone who writes
-`@habot ...` in Telegram gets no answer, and cannot make the bot do anything.
-
-If a bridge also copies the **channel to Telegram**, the answers of the bot appear there too, for everyone in that chat.
-Keep the bot's channel out of such a bridge, or keep sensitive entities off the read list.
 
 ## Troubleshooting
 
