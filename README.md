@@ -6,6 +6,9 @@ A Home Assistant integration that lets the people on a **private Meshtastic chan
 Assist**. Someone sends `@habot is the kitchen light on` on the channel, the bot asks Home Assistant's built-in
 conversation agent, and the answer goes back to the same channel over the mesh, with no internet needed.
 
+Your home, cabin or farm keeps answering when the phone network does not reach it, when the internet is down, or when
+you would rather not send a message through anybody's cloud. See [Why use it](#why-use-it).
+
 ```
 Anna   @habot what time is it
 habot  habot: 7:09 AM
@@ -26,17 +29,41 @@ Home Assistant's [conversation](https://www.home-assistant.io/integrations/conve
 
 ## Contents
 
-1. [What it does](#what-it-does)
-2. [Requirements](#requirements)
-3. [Installation](#installation)
-4. [Setup](#setup)
-5. [What the bot may read and do](#what-the-bot-may-read-and-do)
-6. [Security](#security)
-7. [Replies](#replies)
-8. [Options](#options)
-9. [Audit](#audit)
-10. [Troubleshooting](#troubleshooting)
-11. [Limits and risks](#limits-and-risks)
+1. [Why use it](#why-use-it)
+2. [What it does](#what-it-does)
+3. [Requirements](#requirements)
+4. [Installation](#installation)
+5. [Setup](#setup)
+6. [What the bot may read and do](#what-the-bot-may-read-and-do)
+7. [Security](#security)
+8. [Replies](#replies)
+9. [Options](#options)
+10. [Audit](#audit)
+11. [Troubleshooting](#troubleshooting)
+12. [Limits and risks](#limits-and-risks)
+
+## Why use it
+
+[Meshtastic](https://meshtastic.org) is a low-power radio mesh that needs no mobile network, no internet and no
+subscription. Home Assistant normally reaches you through exactly those things, so it goes quiet where they are missing.
+The bot gives a person with a small handheld radio a way to ask the house a question or give it a simple, **pre-approved**
+instruction by text, over the mesh. Mesh messages are small (about 200 bytes), so it suits short questions and short
+answers, the kind you would otherwise phone someone about.
+
+| Situation | What it is for |
+|---|---|
+| **No mobile reception**: a cabin, farm, allotment, vineyard, holiday home, boat, caravan or a big estate | Ask the building from the field or the lake: *is the pump running*, *what is the water tank level*, *what is the temperature inside*. Run a script such as `@habot run open gate`. |
+| **Outage**: a storm, a failed mast, a power cut that took the internet down | While Home Assistant and the gateway still have power (a battery or a small UPS is enough), the family can still check on the house and run a script such as `@habot run generator`. |
+| **Arriving somewhere cold or remote** | Send `@habot run warm up the cabin` while you are still within mesh range of it, so it is warm when you arrive. |
+| **Private communication**: no phone number, no cloud account, no data plan, nothing stored by a service | Messages are encrypted with the channel key and travel over the mesh, not through a phone network or an online service (unless you switch on MQTT uplink on the channel). There is no cloud service and no LLM in the loop, only Home Assistant's local, built-in agent. |
+| **Travel and roaming**: abroad, at sea, in a valley without coverage | No roaming charges and no dependence on a local network. The house is a text message away as long as your radio can reach the gateway, directly or through other nodes of the mesh. |
+| **Community and emergency groups**: neighbourhood groups, volunteer and radio-amateur teams, a village on a shared mesh | A private channel on which trusted members can ask for the status of a shared building, a generator or a water supply, with nobody getting more access than the lists allow. |
+| **Family members without the app or an account** | A relative with a radio on the channel can ask `@habot is the heating on` without a Home Assistant login. They only get what you put on the lists. |
+
+It is deliberately **not** a remote control for everything. The bot can only read and do what you put on its lists,
+which are empty to begin with, and scripts are the safest way to allow an action. Delivery over a mesh is best effort,
+so do not rely on it for anything where a missing message could hurt someone, and it is not a replacement for
+emergency services.
 
 ## What it does
 
